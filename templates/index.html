@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustMovie - AI Movie Recommender</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header class="gradient-header">
+        <div class="container flex justify-between items-center">
+            <div class="logo">
+                <span class="logo-icon">🎬</span>
+                <span>JustMovie</span>
+            </div>
+            {% if session['username'] %}
+                <div class="flex items-center">
+                    <span class="mr-4">Welcome, {{ session['username'] }}</span>
+                    <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+                    <a href="#popular-movies-section" class="nav-link">Discover</a>
+                    <a href="{{ url_for('history') }}" class="nav-link">History</a>
+                    <a href="{{ url_for('watchlist') }}" class="nav-link">Watchlist</a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+                </div>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="container">
+            <h1 class="hero-title floating-animation">Discover Your Next Favorite Movie</h1>
+            <p class="hero-subtitle">AI-powered recommendations tailored to your taste. Find hidden gems and timeless classics with our intelligent movie recommendation system.</p>
+        </div>
+    </section>
+
+    <section class="container">
+        <form id="recommendForm">
+            <!-- Basic Preferences -->
+            <div class="form-section">
+                <h3>🎯 Basic Preferences</h3>
+                
+                <div class="form-group">
+                    <label class="block text-gray-400 font-semibold mb-2">Favorite Movie (Optional)</label>
+                    <input type="text" name="favorite_movie" id="favorite_movie" placeholder="Type a movie title..." class="w-full p-2 border rounded">
+                    <small class="text-gray-500">Start typing to get suggestions based on our database</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-gray-400 font-semibold mb-3">Preferred Genres</label>
+                    <div id="genre-pills" class="flex flex-wrap">
+                        <span class="genre-pill" data-genre="">Any Genre</span>
+                        {% if options and options.genres %}
+                            {% for genre in options.genres[:20] %}
+                                <span class="genre-pill" data-genre="{{ genre }}">{{ genre }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="genre-pill" data-genre="Action">Action</span>
+                            <span class="genre-pill" data-genre="Adventure">Adventure</span>
+                            <span class="genre-pill" data-genre="Comedy">Comedy</span>
+                            <span class="genre-pill" data-genre="Drama">Drama</span>
+                            <span class="genre-pill" data-genre="Fantasy">Fantasy</span>
+                            <span class="genre-pill" data-genre="Science Fiction">Science Fiction</span>
+                            <span class="genre-pill" data-genre="Crime">Crime</span>
+                            <span class="genre-pill" data-genre="Romance">Romance</span>
+                            <span class="genre-pill" data-genre="Thriller">Thriller</span>
+                            <span class="genre-pill" data-genre="Horror">Horror</span>
+                        {% endif %}
+                    </div>
+                    <input type="hidden" id="selected-genres" name="genres">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="block text-gray-400 font-semibold mb-2">Language</label>
+                        <select name="original_language" class="w-full p-2 border rounded">
+                            <option value="">Any Language</option>
+                            {% if options and options.languages %}
+                                {% for lang in options.languages[:15] %}
+                                    <option value="{{ lang }}">{{ language_map[lang] }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="it">Italian</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ko">Korean</option>
+                                <option value="zh">Chinese</option>
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-gray-400 font-semibold mb-2">Minimum Rating</label>
+                        <select name="min_rating" class="w-full p-2 border rounded">
+                            <option value="0">Any Rating</option>
+                            <option value="5.0">5.0+ (Decent)</option>
+                            <option value="6.0">6.0+ (Good)</option>
+                            <option value="7.0">7.0+ (Great)</option>
+                            <option value="8.0">8.0+ (Excellent)</option>
+                            <option value="9.0">9.0+ (Masterpiece)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Filters -->
+            <button type="button" class="toggle-button" onclick="toggleAdvancedFilters()">
+                🔧 Advanced Filters
+            </button>
+            
+            <div id="advanced-filters" class="advanced-filters">
+                <div class="form-section">
+                    <h3>⏱️ Runtime & Release</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="block text-gray-400 font-semibold mb-2">Runtime</label>
+                            <select name="runtime_preference" class="w-full p-2 border rounded">
+                                <option value="">Any Runtime</option>
+                                <option value="short">Short (< 90 min)</option>
+                                <option value="medium">Medium (90-150 min)</option>
+                                <option value="long">Long (> 150 min)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="block text-gray-400 font-semibold mb-2">Release Period</label>
+                            <select name="release_period" class="w-full p-2 border rounded">
+                                <option value="">Any Period</option>
+                                <option value="2020s">2020s</option>
+                                <option value="2010s">2010s</option>
+                                <option value="2000s">2000s</option>
+                                <option value="1990s">1990s</option>
+                                <option value="1980s">1980s</option>
+                                <option value="1970s">1970s</option>
+                                <option value="classic">Classic (Before 1970)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="block text-gray-400 font-semibold mb-2">Specific Year Range</label>
+                            <div class="flex gap-2">
+                                <select name="release_year_start" class="w-full p-2 border rounded">
+                                    <option value="">From Year</option>
+                                    {% if options and options.year_range %}
+                                        {% for year in range(options.year_range.min, options.year_range.max + 1) %}
+                                            <option value="{{ year }}">{{ year }}</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for year in range(1970, 2025) %}
+                                            <option value="{{ year }}">{{ year }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <select name="release_year_end" class="w-full p-2 border rounded">
+                                    <option value="">To Year</option>
+                                    {% if options and options.year_range %}
+                                        {% for year in range(options.year_range.min, options.year_range.max + 1) %}
+                                            <option value="{{ year }}">{{ year }}</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for year in range(1970, 2025) %}
+                                            <option value="{{ year }}">{{ year }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="block text-gray-400 font-semibold mb-2">Custom Runtime</label>
+                            <div class="flex gap-2">
+                                <input type="number" name="min_runtime" placeholder="Min" min="0" max="300" class="w-full p-2 border rounded">
+                                <input type="number" name="max_runtime" placeholder="Max" min="0" max="300" class="w-full p-2 border rounded">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>🎭 Content & Production</h3>
+                    
+                    <div class="form-group">
+                        <label class="block text-gray-400 font-semibold mb-2">Keywords</label>
+                        <input type="text" name="keywords" placeholder="e.g., superhero, space, romance" class="w-full p-2 border rounded">
+                        <small class="text-gray-500">Separate multiple keywords with commas</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-gray-400 font-semibold mb-2">Production Company</label>
+                        <select name="production_companies" class="w-full p-2 border rounded">
+                            <option value="">Any Company</option>
+                            {% if options and options.top_companies %}
+                                {% for company in options.top_companies[:30] %}
+                                    <option value="{{ company }}">{{ company }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="Warner Bros">Warner Bros</option>
+                                <option value="Universal Studios">Universal Studios</option>
+                                <option value="Paramount Pictures">Paramount Pictures</option>
+                                <option value="Columbia Pictures">Columbia Pictures</option>
+                                <option value="20th Century Fox">20th Century Fox</option>
+                                <option value="Disney">Disney</option>
+                                <option value="Marvel Studios">Marvel Studios</option>
+                                <option value="Lucasfilm">Lucasfilm</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-button">
+                🤖 Get AI Recommendations
+            </button>
+        </form>
+    </section>
+
+    <!-- recommendation-section -->
+    <section id="recommendation-section" class="container">
+        <h2 class="text-3xl font-bold text-center my-4 text-white">Your Recommendations</h2>
+        <div class="loading" style="display: none;">
+            <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <p class="mt-2 text-white">Finding perfect movies for you...</p>
+            </div>
+        </div>
+        <div id="recommendation-content"></div>
+    </section>
+
+    <!-- popular-movies -->
+    <section id="popular-movies-section" class="container">
+        <h2 class="popular-movies-title">🔥 Trending Movies</h2>
+        <p class="popular-movies-subtitle">Discover what everyone's watching right now</p>
+        
+        <div class="popular-movies-grid">
+            <div class="popular-movie-card">
+                <div class="popular-movie-poster">
+                    <img src="https://image.tmdb.org/t/p/w342/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg" alt="The Shawshank Redemption Poster" />
+                    <div class="movie-overlay">
+                        <button class="quick-add-btn">+ Watchlist</button>
+                    </div>
+                </div>
+                <div class="popular-movie-info">
+                    <h3 class="popular-movie-title">The Shawshank Redemption</h3>
+                    <div class="popular-movie-meta">
+                        <span class="movie-year">1994</span>
+                        <div class="movie-rating">
+                            <span class="rating-star">⭐</span>
+                            <span class="rating-value">9.2</span>
+                        </div>
+                    </div>
+                    <div class="popular-movie-genres">
+                        <span class="genre-tag">Drama</span>
+                        <span class="genre-tag">Crime</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Repeat similar structure for more movie cards -->
+            <div class="popular-movie-card">
+                <div class="popular-movie-poster">
+                    <img src="https://image.tmdb.org/t/p/w342/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg" alt="Inception Poster" />
+                    <div class="movie-overlay">
+                        <button class="quick-add-btn">+ Watchlist</button>
+                    </div>
+                </div>
+                <div class="popular-movie-info">
+                    <h3 class="popular-movie-title">Inception</h3>
+                    <div class="popular-movie-meta">
+                        <span class="movie-year">2010</span>
+                        <div class="movie-rating">
+                            <span class="rating-star">⭐</span>
+                            <span class="rating-value">8.8</span>
+                        </div>
+                    </div>
+                    <div class="popular-movie-genres">
+                        <span class="genre-tag">Science Fiction</span>
+                        <span class="genre-tag">Action</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popular-movie-card">
+                <div class="popular-movie-poster">
+                        <img src="https://image.tmdb.org/t/p/w342/qJ2tW6WMUDux911r6m7haRef0WH.jpg" alt="The Dark Knight Poster" />
+                    <div class="movie-overlay">
+                        <button class="quick-add-btn">+ Watchlist</button>
+                    </div>
+                </div>
+                <div class="popular-movie-info">
+                    <h3 class="popular-movie-title">The Dark Knight</h3>
+                    <div class="popular-movie-meta">
+                        <span class="movie-year">2008</span>
+                        <div class="movie-rating">
+                            <span class="rating-star">⭐</span>
+                            <span class="rating-value">9.0</span>
+                        </div>
+                    </div>
+                    <div class="popular-movie-genres">
+                        <span class="genre-tag">Action</span>
+                        <span class="genre-tag">Crime</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="popular-movies-cta">
+            <button class="load-more-btn">Load More Movies</button>
+            <a href="#" class="view-all-link">View All Trending →</a>
+        </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <span class="footer-logo-icon">🎬</span>
+                    <span>JustMovie</span>
+                </div>
+                <p class="footer-description">Discover your next favorite movie with AI-powered recommendations tailored to your unique taste.</p>
+                <div class="footer-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">50K+</span>
+                        <span class="stat-label">Movies</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">1M+</span>
+                        <span class="stat-label">Recommendations</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">24/7</span>
+                        <span class="stat-label">Available</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Discover</h3>
+                <ul>
+                    <li><a href="#">Get Recommendations</a></li>
+                    <li><a href="#">Trending Movies</a></li>
+                    <li><a href="#">AI Suggestions</a></li>
+                    <li><a href="#">New Releases</a></li>
+                    <li><a href="#">Top Rated</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Features</h3>
+                <ul>
+                    <li><a href="#">Smart Filtering</a></li>
+                    <li><a href="#">Personal Watchlist</a></li>
+                    <li><a href="#">Movie History</a></li>
+                    <li><a href="#">AI Personalization</a></li>
+                    <li><a href="#">Genre Explorer</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Support</h3>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Send Feedback</a></li>
+                    <li><a href="#">Report Issues</a></li>
+                    <li><a href="#">FAQ</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Connect</h3>
+                <ul class="social-links">
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">📱</span>
+                        Mobile App
+                    </a></li>
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">📧</span>
+                        Newsletter
+                    </a></li>
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">🐦</span>
+                        Twitter
+                    </a></li>
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">📘</span>
+                        Facebook
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="footer-bottom-content">
+                <p class="copyright">© 2025 JustMovie - AI Movie Recommender. All rights reserved.</p>
+                <ul class="footer-links">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                    <li><a href="#">Legal</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const options = {{ options|tojson|safe }};
+        
+        function toggleAdvancedFilters() {
+            const filters = document.getElementById('advanced-filters');
+            const button = document.querySelector('.toggle-button');
+            
+            if (filters.classList.contains('show')) {
+                filters.classList.remove('show');
+                button.textContent = '🔧 Advanced Filters';
+            } else {
+                filters.classList.add('show');
+                button.textContent = '🔧 Hide Advanced Filters';
+            }
+        }
+
+        // // Handle runtime preference conversion
+        // document.querySelector('select[name="runtime_preference"]').addEventListener('change', function(e) {
+        //     const minRuntimeInput = document.querySelector('input[name="min_runtime"]');
+        //     const maxRuntimeInput = document.querySelector('input[name="max_runtime"]');
+            
+        //     switch(e.target.value) {
+        //         case 'short':
+        //             minRuntimeInput.value = '';
+        //             maxRuntimeInput.value = '90';
+        //             break;
+        //         case 'medium':
+        //             minRuntimeInput.value = '90';
+        //             maxRuntimeInput.value = '150';
+        //             break;
+        //         case 'long':
+        //             minRuntimeInput.value = '150';
+        //             maxRuntimeInput.value = '';
+        //             break;
+        //         default:
+        //             minRuntimeInput.value = '';
+        //             maxRuntimeInput.value = '';
+        //     }
+        // });
+
+        // // Handle release period conversion
+        // document.querySelector('select[name="release_period"]').addEventListener('change', function(e) {
+        //     const startYearSelect = document.querySelector('select[name="release_year_start"]');
+        //     const endYearSelect = document.querySelector('select[name="release_year_end"]');
+            
+        //     switch(e.target.value) {
+        //         case '2020s':
+        //             startYearSelect.value = '2020';
+        //             endYearSelect.value = '2025';
+        //             break;
+        //         case '2010s':
+        //             startYearSelect.value = '2010';
+        //             endYearSelect.value = '2019';
+        //             break;
+        //         case '2000s':
+        //             startYearSelect.value = '2000';
+        //             endYearSelect.value = '2009';
+        //             break;
+        //         case '1990s':
+        //             startYearSelect.value = '1990';
+        //             endYearSelect.value = '1999';
+        //             break;
+        //         case '1980s':
+        //             startYearSelect.value = '1980';
+        //             endYearSelect.value = '1989';
+        //             break;
+        //         case '1970s':
+        //             startYearSelect.value = '1970';
+        //             endYearSelect.value = '1979';
+        //             break;
+        //         case 'classic':
+        //             startYearSelect.value = '';
+        //             endYearSelect.value = '1969';
+        //             break;
+        //         default:
+        //             startYearSelect.value = '';
+        //             endYearSelect.value = '';
+        //     }
+        // });
+    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

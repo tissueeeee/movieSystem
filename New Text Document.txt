@@ -1,0 +1,6 @@
+recommendations = recommendations.sort_values('final_score', ascending=False).head(9)
+
+https://sqlitebrowser.org/
+sqlite3 history.db
+.tables
+.schema ___

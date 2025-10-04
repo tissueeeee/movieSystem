@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search History</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <header class="gradient-header">
+        <div class="container flex justify-between items-center">
+            <div class="logo">
+                <span class="logo-icon">🎬</span>
+                <span>JustMovie</span>
+            </div>
+            {% if session['username'] %}
+                <div class="flex items-center">
+                    <span class="mr-4">Welcome, {{ session['username'] }}</span>
+                    <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+                    <a href="{{ url_for('history') }}" class="nav-link">History</a>
+                    <a href="{{ url_for('watchlist') }}" class="nav-link">Watchlist</a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+                </div>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <h2 class="text-3xl font-bold mb-6">Your Search History</h2>
+
+        {% if error %}
+            <div class="bg-red-600 p-4 rounded mb-6">
+                <p>{{ error }}</p>
+            </div>
+        {% elif history %}
+            <div class="space-y-4">
+                {% for item in history %}
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2">Search at {{ item[10] }}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <p><strong>Favorite Movie:</strong> {{ item[0] or 'None' }}</p>
+                            <p><strong>Genres:</strong> {{ item[1] or 'Any' }}</p>
+                            <p><strong>Language:</strong> {{ item[2] or 'Any' }}</p>
+                            <p><strong>Minimum Rating:</strong> {{ item[3] or 'Any' }}</p>
+                            <p><strong>Maximum Runtime:</strong> {{ item[4] or 'Any' }} min</p>
+                            <p><strong>Minimum Runtime:</strong> {{ item[5] or 'Any' }} min</p>
+                            <p><strong>Keywords:</strong> {{ item[6] or 'Any' }}</p>
+                            <p><strong>Production Companies:</strong> {{ item[7] or 'Any' }}</p>
+                            <p><strong>Release Year Start:</strong> {{ item[8] or 'Any' }}</p>
+                            <p><strong>Release Year End:</strong> {{ item[9] or 'Any' }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <p>No search history available.</p>
+            </div>
+        {% endif %}
+    </main>
+
+    <!-- footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="footer-logo">
+                    <span class="footer-logo-icon">🎬</span>
+                    <span>JustMovie</span>
+                </div>
+                <p class="footer-description">Discover your next favorite movie with AI-powered recommendations tailored to your unique taste.</p>
+                <div class="footer-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">50K+</span>
+                        <span class="stat-label">Movies</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">1M+</span>
+                        <span class="stat-label">Recommendations</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">24/7</span>
+                        <span class="stat-label">Available</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Discover</h3>
+                <ul>
+                    <li><a href="#">Get Recommendations</a></li>
+                    <li><a href="#">Trending Movies</a></li>
+                    <li><a href="#">AI Suggestions</a></li>
+                    <li><a href="#">New Releases</a></li>
+                    <li><a href="#">Top Rated</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Features</h3>
+                <ul>
+                    <li><a href="#">Smart Filtering</a></li>
+                    <li><a href="#">Personal Watchlist</a></li>
+                    <li><a href="#">Movie History</a></li>
+                    <li><a href="#">AI Personalization</a></li>
+                    <li><a href="#">Genre Explorer</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Support</h3>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Send Feedback</a></li>
+                    <li><a href="#">Report Issues</a></li>
+                    <li><a href="#">FAQ</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Connect</h3>
+                <ul class="social-links">
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">📱</span>
+                        Mobile App
+                    </a></li>
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">📧</span>
+                        Newsletter
+                    </a></li>
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">🐦</span>
+                        Twitter
+                    </a></li>
+                    <li><a href="#" class="social-link">
+                        <span class="social-icon">📘</span>
+                        Facebook
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="footer-bottom-content">
+                <p class="copyright">© 2025 JustMovie - AI Movie Recommender. All rights reserved.</p>
+                <ul class="footer-links">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                    <li><a href="#">Legal</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
