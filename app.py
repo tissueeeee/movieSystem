@@ -22,7 +22,7 @@ app = Flask(__name__)
 app.secret_key = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6'
 
 # TMDb API setup
-TMDB_API_KEY = '44f180dccfbc6d2d9ed74bdd398cf242'
+TMDB_API_KEY = '44f180dccfbc6d2d9ed74bdd398cf2421' # Replace with your actual TMDb API key
 TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 
 # Set Malaysia time zone (UTC+08:00)
